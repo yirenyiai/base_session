@@ -9,7 +9,8 @@
 #define CLIENT_NET_BASE_DECODER_HPP_
 
 #include "net_util/util.hpp"
-#include <third_party\libevent\include\event.h>
+
+#include <event/event.h>
 
 #include <cstdint>
 #include <vector>

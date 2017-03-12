@@ -8,7 +8,7 @@
 #ifndef SERVICE_DATACENTER_DOWNLOAD_BASE_SESSION_H_
 #define SERVICE_DATACENTER_DOWNLOAD_BASE_SESSION_H_
 
-#include <third_party\libevent\include\event.h>
+#include <event/event.h>
 #include <cassert>
 #include <string>
 
