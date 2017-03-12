@@ -29,3 +29,4 @@ _ReSharper*/
 [Tt]est[Rr]esult*
 base_sesion.vcxproj
 base_sesion.vcxproj.filters
+third_party/*
