@@ -30,44 +30,39 @@ namespace net
 		void push_back(bufferevent *bev)
 		{
 			evbuffer_add_buffer(m_cache_evbuf, bufferevent_get_input(bev));
-			int real_buf_size = evbuffer_get_length(m_cache_evbuf);
-			if (real_buf_size == 0)
-				return ;
 			do
 			{
-				if (real_buf_size >= m_need_size)
+				int real_buf_size = evbuffer_get_length(m_cache_evbuf);		// 获取当前数据长度
+
+				if (!m_head_ready && real_buf_size >= head_size)
 				{
-					if (!m_head_ready)
-					{
-						int ret_remove = evbuffer_remove(m_cache_evbuf, &m_package_head, head_size);		// 获取包头
-						if (ret_remove == -1)
-							continue;
+					int ret_remove = evbuffer_remove(m_cache_evbuf, &m_package_head, head_size);		// 获取包头
+					if (ret_remove == -1)
+						continue;
 
-						// 如果包体长度为0， 则持续接收下一个数据包
-						const uint32_t body_size = get_body_size<head_type>(m_package_head);
-						m_head_ready = body_size > 0 ? true : false;
-						m_need_size  = m_head_ready ? body_size : head_size;
+					// 如果包体长度为0， 则持续接收下一个数据包
+					const uint32_t body_size = get_body_size<head_type>(m_package_head);
+					m_head_ready = body_size > 0 ? true : false;
+					m_need_size = m_head_ready ? body_size : head_size;
 
-						if (m_head_ready)
-							m_body_cache.resize(body_size);
-					}
-					else
-					{
-						int ret_remove = evbuffer_remove(m_cache_evbuf, m_body_cache.data(), m_need_size);
-						if (ret_remove == -1)
-							continue;
+					if (m_head_ready)
+						m_body_cache.resize(body_size);
+				}
+				else if (m_head_ready && real_buf_size >= util::get_body_size(m_package_head))
+				{
+					int ret_remove = evbuffer_remove(m_cache_evbuf, m_body_cache.data(), m_need_size);
+					if (ret_remove == -1)
+						continue;
 
-						// 完成了一次包体的接收了, 返回到主线程中执行
-						if (m_decoder_cb) 
-							m_decoder_cb(m_package_head, m_body_cache.data(), m_ctx);
+					// 完成了一次包体的接收了, 返回到主线程中执行
+					if (m_decoder_cb)
+						m_decoder_cb(m_package_head, m_body_cache.data(), m_ctx);
 
-						// 接收下一个数据包
-						m_head_ready = false;
-					}
-					real_buf_size = evbuffer_get_length(m_cache_evbuf);
+					// 接收下一个数据包
+					m_head_ready = false;
 				}
 				else
-					break;
+					break;		// 退出本次循环
 			}while(true);
 		}
 
